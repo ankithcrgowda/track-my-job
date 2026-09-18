@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <!-- ===================== PROJECT IDENTITY ===================== -->
+    <groupId>com.trackmyjob</groupId>
+    <artifactId>TrackMyJob</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <packaging>jar</packaging>
+    <name>TrackMyJob</name>
+    <description>Job Application Tracker REST API</description>
+
+    <!-- ===================== SPRING BOOT PARENT ===================== -->
+    <!--
+        This is the most important part of any Spring Boot pom.xml.
+        By declaring Spring Boot as the "parent", we inherit:
+        - Pre-tested, compatible versions for ALL common libraries
+        - Default Maven plugin configurations
+        - No need to specify versions for most dependencies manually
+        Think of it as: Spring Boot guarantees these libraries work together.
+    -->
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.5.0</version>
+        <relativePath/>
+    </parent>
+
+    <!-- ===================== GLOBAL PROPERTIES ===================== -->
+    <properties>
+        <java.version>21</java.version>
+        <!-- JJWT version pinned here so we change it in one place if needed -->
+        <jjwt.version>0.12.6</jjwt.version>
+    </properties>
+
+    <!-- ===================== DEPENDENCIES ===================== -->
+    <dependencies>
+
+        <!-- === WEB LAYER === -->
+        <!--
+            Bundles Spring MVC + embedded Tomcat server.
+            Your app becomes a standalone web server — no external Tomcat needed.
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <!-- === DATABASE LAYER === -->
+        <!--
+            Spring Data JPA + Hibernate ORM.
+            You already know Hibernate — this is the same engine,
+            but Spring Boot auto-configures SessionFactory, transactions, etc.
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+
+        <!--
+            PostgreSQL JDBC Driver.
+            JPA/Hibernate speaks "JDBC" to the database.
+            This driver is the translator between Java and PostgreSQL.
+        -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- H2 In-Memory Database — used ONLY during tests -->
+        <!-- Replaces PostgreSQL for integration tests so we don't need -->
+        <!-- a real DB running in CI. H2 starts fresh for every test run. -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- SECURITY LAYER -->
+        <!--
+            Spring Security framework.
+            Adds authentication + authorization infrastructure.
+            WARNING: The moment this is on the classpath, ALL endpoints
+            are locked. We'll configure it properly in Phase 4.
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+
+        <!-- === (JSON Web Token) -->
+        <!--
+            JJWT is the most popular Java library for creating,
+            signing, and parsing JWT tokens.
+            Split into 3 parts: api (compile), impl + jackson (runtime only).
+            Why split? You code against the API, the impl does the work at runtime.
+        -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+            <version>${jjwt.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <version>${jjwt.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <version>${jjwt.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- VALIDATION -->
+        <!--
+            Enables Bean Validation annotations: @NotBlank, @Email, @Size etc.
+            Uses Hibernate Validator under the hood (same Hibernate team,
+            different product — this one validates Java objects, not DB).
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+
+        <!-- SWAGGER / OPENAPI DOCUMENTATION -->
+        <!--
+            Springdoc scans your @RestController classes at startup
+            and auto-generates an interactive Swagger UI at /swagger-ui.html
+            No XML config needed. Pure annotation-driven.
+        -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>2.8.8</version>
+        </dependency>
+
+        <!-- DEVELOPER PRODUCTIVITY -->
+        <!--
+            Lombok: annotation processor that generates boilerplate at compile time.
+            @Data = @Getter + @Setter + @ToString + @EqualsAndHashCode
+            @Builder = Builder pattern
+            @RequiredArgsConstructor = constructor for final fields (used heavily with DI)
+            optional=true means: remove this and app still works (it's a dev tool)
+        -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <!--
+            DevTools: restarts app automatically on file save during development.
+            scope=runtime + optional=true ensures it NEVER ends up in production JAR.
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+    </dependencies>
+
+    <!-- BUILD PLUGINS -->
+    <build>
+        <plugins>
+            <!--
+                Spring Boot Maven Plugin: packages your app as an executable JAR.
+                The <excludes> block ensures Lombok is NOT bundled in the final JAR
+                (it's only needed at compile time, not runtime).
+            -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                        </exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

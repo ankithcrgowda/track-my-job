@@ -1,0 +1,98 @@
+# docker-compose.yml
+# This file defines all the infrastructure our app needs to run locally.
+# Right now that's just PostgreSQL. Later we could add Redis, etc.
+
+version: '3.8'
+
+services:
+
+  postgres:
+    image: postgres:16-alpine
+    # postgres:16-alpine means:
+    #   - PostgreSQL version 16
+    #   - alpine = a tiny Linux variant (~5MB vs ~200MB for full image)
+    #   - Always pin a version. Never use 'latest' — it can break your
+    #     app silently when a new major version releases.
+
+    container_name: trackmyjob_postgres
+    # A friendly name for the container so we can reference it easily
+    # in docker commands instead of using a random generated ID.
+
+    restart: unless-stopped
+    # If Docker restarts (e.g. after machine reboot), automatically
+    # restart this container — unless YOU explicitly stopped it.
+
+    environment:
+      # These become environment variables INSIDE the container.
+      # PostgreSQL reads these on first startup to create the DB and user.
+      # Must match exactly what we put in application.properties.
+      POSTGRES_DB: trackmyjob_db
+      POSTGRES_USER: trackmyjob_user
+      POSTGRES_PASSWORD: trackmyjob_pass
+
+    ports:
+      - "5432:5432"
+      # Format is: "HOST_PORT:CONTAINER_PORT"
+      # Left side (5432) = port on YOUR Windows machine
+      # Right side (5432) = port inside the Docker container
+      # So when our Spring Boot app connects to localhost:5432,
+      # Docker forwards that to PostgreSQL inside the container.
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+        # This is the most important line for a database container.
+        #
+        # Problem without this: Docker containers are stateless by default.
+        # Every time you stop and restart the container, ALL data is wiped.
+        # Your tables, your users, everything — gone.
+        #
+        # Solution: a "volume" is a persistent storage area that lives
+        # OUTSIDE the container. Even if the container is deleted,
+        # the data survives in this named volume.
+        #
+      # postgres_data = our volume name (defined below)
+      # /var/lib/postgresql/data = where PostgreSQL stores its files inside the container
+    healthcheck:
+      # Wait until PostgreSQL is actually ready to accept connections.
+      # Without this, the app container might start before the DB is ready
+      # and fail with "Connection refused" on first startup.
+      test: ["CMD-SHELL", "pg_isready -U trackmyjob_user -d trackmyjob_db"]
+      interval: 10s # check every 10 seconds
+      timeout: 5s  # fail if no response within 5 seconds
+      retries: 5  # try 5 times before marking as unhealthy
+
+# ------ Spring Boot Application ----------------------------------
+  app:
+    build:
+      context: .    # build from current directory
+      dockerfile: Dockerfile
+    container_name: trackmyjob_app
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      # These override application.properties at runtime.
+      # Passing credentials as environment variables is more secure
+      # than hardcoding them in properties files.
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/trackmyjob_db
+      SPRING_DATASOURCE_USERNAME: trackmyjob_user
+      SPRING_DATASOURCE_PASSWORD: trackmyjob_pass
+      SPRING_PROFILES_ACTIVE: docker
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+        # "service_healthy" means: wait until postgres passes its
+        # healthcheck above before starting this container.
+        # This guarantees DB is ready before the app tries to connect.
+
+
+
+
+
+# Named Volumes
+volumes:
+  postgres_data:
+  # Declaring the volume here tells Docker to manage it.
+  # Docker stores it somewhere on your machine automatically.
+  # You don't need to know the exact path — Docker handles it.
