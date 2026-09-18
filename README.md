@@ -7,7 +7,7 @@ JWT Authentication, PostgreSQL, and Docker.
 
 ## Quick Start
 \```bash
-git clone https://github.com/YOUR_USERNAME/TrackMyJob.git
+git clone https://github.com/ankithcrgowda/track-my-job.git
 cd TrackMyJob
 docker compose up --build
 \```
