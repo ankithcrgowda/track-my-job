@@ -1,8 +1,15 @@
 # TrackMyJob
+<<<<<<< HEAD
 ![CI](https://github.com/ankithcrgowda/track-my-job/actions/workflows/ci.yml/badge.svg)
 
 TrackMyJob is a RESTful Web API built with Java 21 and Spring Boot 3 for tracking job application lifecycles. The application features stateless JWT authentication, user-isolated application management, input validation, custom exception handling, PostgreSQL persistence, and containerized deployment via Docker and Docker Compose.
 
+=======
+
+TrackMyJob is a RESTful Web API built with Java 21 and Spring Boot 3 for tracking job application lifecycles. The application features stateless JWT authentication, user-isolated application management, input validation, custom exception handling, PostgreSQL persistence, and containerized deployment via Docker and Docker Compose.
+
+---
+>>>>>>> 93b69f4 (added JaCoCo and created the line coverage report)
 
 ## Table of Contents
 
